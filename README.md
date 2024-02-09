@@ -7,7 +7,7 @@
 install -r requirements.txt`
 
 2. В файле `default_config.ini` задайте необходимые переменные.
-3. `python main.py`
+3. Выполните `python main.py`
 
 ## Файлы конфигурации
 По умолчанию использутся файл `default_config.ini`. Если в корневой папке проекта существует
