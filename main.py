@@ -4,7 +4,6 @@ from config import config
 from handlers import info, admin
 from database.connect import init_models
 import logging
-from middlewares import AuthorizeMiddleware
 
 
 async def main():
