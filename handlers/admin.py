@@ -20,7 +20,7 @@ async def get_statistics(msg: Message, session: AsyncSession):
     users_today = (await session.execute(select(func.count(User.id))
                                          .filter(User.last_login > yesterday))).first()[0]
     sign_up_today = (await session.execute(select(func.count(User.id))
-                                           .filter(User.last_login > yesterday))).first()[0]
+                                           .filter(User.created_on > yesterday))).first()[0]
     await msg.answer(f'''<b><u>Статистика:</u></b>
 Пользователей, всего: {total_users}
 Сегодня зарегистрировалось: {sign_up_today}

@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import Integer, VARCHAR, Column, DateTime, ForeignKey, Boolean, Float, Table
 from datetime import datetime

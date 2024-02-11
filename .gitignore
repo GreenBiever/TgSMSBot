@@ -2,3 +2,5 @@ venv/
 .vs/
 **/__pycache__/
 config.ini
+dbdiagram.txt
+*config.json

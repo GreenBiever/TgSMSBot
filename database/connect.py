@@ -10,7 +10,6 @@ def get_db_url(driver: str = 'aiomysql'):
     return "mysql+{driver}://{user}:{password}@{host}:{port}/{database}".format(
         **config["MySQL"], driver=driver)
 
-print(get_db_url(driver='pymysql'))
 engine = create_async_engine(get_db_url(), pool_recycle=1600)
 
 async_session = sessionmaker(
