@@ -11,11 +11,11 @@ from database.models import User
 router = Router()
 router.message.middleware(AuthorizeMiddleware())
 
+
 @router.message(Command("start"))
 async def cmd_start(msg: Message):
     START_TEXT = 'Добро пожаловать'
     await msg.answer(START_TEXT)
-
 
 
 #####
@@ -31,8 +31,9 @@ async def enter_to_admin_panel(msg: Message, state: FSMContext):
     await state.set_state(LoginAsAdministrator.wait_password)
     await msg.answer("Введите пароль: ")
 
+
 @router.message(F.text, LoginAsAdministrator.wait_password)
-async def login_as_admin(msg: Message, user: User, session: AsyncSession, state: FSMContext): 
+async def login_as_admin(msg: Message, user: User, session: AsyncSession, state: FSMContext):
     await state.set_state()
     if msg.text == config['App']['admin_panel_password']:
         await msg.answer("Вы успешно вошли в админ панель")
@@ -40,6 +41,7 @@ async def login_as_admin(msg: Message, user: User, session: AsyncSession, state:
         session.add(user)
     else:
         await msg.answer("Пароль неверный")
+
 
 @router.message(Command("exit"))
 async def cmd_exit_from_admin(msg: Message, user: User, session: AsyncSession):

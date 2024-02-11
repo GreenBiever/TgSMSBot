@@ -24,5 +24,6 @@ async def init_models():
 def get_sync_engine() -> Engine:
     return create_engine(get_db_url(driver='pymysql'), pool_recycle=1600)
 
+
 def get_sync_session(engine: Engine) -> Session:
     return Session(engine)

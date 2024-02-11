@@ -1,10 +1,9 @@
 from abc import abstractmethod, ABC
-from typing import Callable
+from typing import Callable, Optional
 
 
 class ServerUnavailable(BaseException):
     pass
-
 
 
 class BaseService(ABC):
@@ -23,7 +22,8 @@ class BaseService(ABC):
         '''return available services. May be raise ServerUnavailable exception'''
 
     @abstractmethod
-    async def rent_number(self, country_id: int, service_id: int, handler: Callable[[str]], *args, **kwargs):
+    async def rent_number(self, country_id: int, service_id: int, handler: Optional[Callable[[str], None]], *args,
+                          **kwargs):
         '''rent a number from service. May be raise ServerUnavailable exception
-    :param handler: async function. Call when 
-    sms is received with (msg[msg code as str], *args, **kwargs'''
+    :param handler: async function. Call when
+    sms is received with (msg[msg code as str], *args, **kwargs)'''
