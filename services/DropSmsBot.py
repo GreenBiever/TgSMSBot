@@ -190,11 +190,11 @@ class DropSmsService(BaseService):
     }
 
     services_dict = {
-        'Facebook': 1,
-        'WhatsApp': 2,
-        'VK': 3,
-        'Google': 4,
-        'Instagram': 5
+        'Facebook': 'fb',
+        'WhatsApp': 'wa',
+        'VK': 'vk',
+        'Google': 'go',
+        'Instagram': 'ig'
     }
 
     async def get_balance(self) -> int:
