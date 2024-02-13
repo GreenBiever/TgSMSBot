@@ -13,8 +13,10 @@ class SMSActivateWebhook(BaseModel):
     country: int
     receivedAt: str
 
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
 
 @router.post(config['web_server']['sms_activate_webhook_path'])
 async def sms_activate_webhook(request: SMSActivateWebhook):
