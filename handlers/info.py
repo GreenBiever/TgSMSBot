@@ -27,14 +27,15 @@ class LoginAsAdministrator(StatesGroup):
 
 
 @router.message(Command("admin", "a"))
-async def enter_to_admin_panel(msg: Message, state: FSMContext):
-    await state.set_state(LoginAsAdministrator.wait_password)
-    await msg.answer("Введите пароль: ")
+async def enter_to_admin_panel(msg: Message, state: FSMContext, user: User):
+    if not user.is_admin:
+        await state.set_state(LoginAsAdministrator.wait_password)
+        await msg.answer("Введите пароль: ")
 
 @router.message(F.text, LoginAsAdministrator.wait_password)
 async def login_as_admin(msg: Message, user: User, session: AsyncSession, state: FSMContext): 
     await state.set_state()
-    if msg.text == config['App']['admin_panel_password']:
+    if msg.text == config['Telegram']['admin_panel_password']:
         await msg.answer("Вы успешно вошли в админ панель")
         user.is_admin = True
         session.add(user)
@@ -43,6 +44,7 @@ async def login_as_admin(msg: Message, user: User, session: AsyncSession, state:
 
 @router.message(Command("exit"))
 async def cmd_exit_from_admin(msg: Message, user: User, session: AsyncSession):
-    user.is_admin = False
-    session.add(user)
-    await msg.answer("Вы вышли из админ панели")
+    if user.is_admin:
+        user.is_admin = False
+        session.add(user)
+        await msg.answer("Вы вышли из админ панели")
