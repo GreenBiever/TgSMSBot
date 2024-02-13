@@ -1,9 +1,9 @@
-import asyncio
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict
 import requests
 from base import BaseService
 from abc import ABC, abstractmethod
-
+import asyncio
+import aiohttp
 
 
 class DropSmsService(BaseService):
@@ -197,15 +197,16 @@ class DropSmsService(BaseService):
         'Instagram': 'ig'
     }
 
-    async def get_balance(self) -> int:
+    async def get_balance(self) -> str:
         url = f'https://api.dropsms.cc/stubs/handler_api.php?action=getBalance&api_key={self.api}'
-        r = requests.get(url=url).text
-        return r
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.text()
 
-    async def get_countries(self) -> dict[str, int]:
+    async def get_countries(self) -> Dict[str, int]:
         return self.country_dict
 
-    async def get_services(self) -> dict[str, int]:
+    async def get_services(self) -> Dict[str, str]:
         return self.services_dict
 
     async def rent_number(self, country_name: str, service_name: str, handler: Optional[Callable[[str], None]], *args,
@@ -214,15 +215,19 @@ class DropSmsService(BaseService):
             country_id = self.country_dict[country_name]
             service_id = self.services_dict[service_name]
             url = f"https://api.dropsms.cc/stubs/handler_api.php?action=getNumber&api_key={self.api}&service={service_id}&country={country_id}"
-            r = requests.get(url=url).text
-            if handler:
-                await handler(r)  # Внесем изменение здесь
-            return r
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    r = await response.text()
+                    if handler:
+                        await handler(r)
+                    return r
         else:
             raise ValueError("Страна или сервис не найден")
 
 
 service = DropSmsService()
+
+
 async def main():
     balance = await service.get_balance()
     print("Баланс:", balance)
