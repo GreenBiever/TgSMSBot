@@ -1,18 +1,4 @@
-from typing import Callable, Optional, Dict
-import requests
-from base import BaseService
-from abc import ABC, abstractmethod
-import asyncio
-import aiohttp
-from services.base import BaseService, ServerUnavailable, BadAPIKey
-
-
-class DropSmsService(BaseService):
-    '''Service implementation for DropSms'''
-
-    api = '95a7ea60-6e3a-47e2-9314-015e969956d0'
-
-    country_dict = {
+countries = {
         'Russia': 0,
         'Ukraine': 1,
         'Kazakhstan': 2,
@@ -189,62 +175,3 @@ class DropSmsService(BaseService):
         'Cape Verde': 186,
         'South Korea': 200
     }
-
-    services_dict = {
-        'Facebook': 'fb',
-        'WhatsApp': 'wa',
-        'VK': 'vk',
-        'Google': 'go',
-        'Instagram': 'ig'
-    }
-
-    async def get_balance(self) -> str:
-        url = f'https://api.dropsms.cc/stubs/handler_api.php?action=getBalance&api_key={self.api}'
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                data = (await response.content.read()).decode()
-                if data == 'BAD_KEY':
-                    raise BadAPIKey
-                args = data.split(':')
-                if args[0] == 'ACCESS_BALANCE':
-                    return float(args[1])
-
-
-    async def get_countries(self) -> Dict[str, int]:
-        return self.country_dict
-
-    async def get_services(self) -> Dict[str, str]:
-        return self.services_dict
-
-    async def rent_number(self, country_name: str, service_name: str, handler: Optional[Callable[[str], None]], *args,
-                          **kwargs):
-        if country_name in self.country_dict and service_name in self.services_dict:
-            country_id = self.country_dict[country_name]
-            service_id = self.services_dict[service_name]
-            url = f"https://api.dropsms.cc/stubs/handler_api.php?action=getNumber&api_key={self.api}&service={service_id}&country={country_id}"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    r = await response.text()
-                    if handler:
-                        await handler(r)
-                    return r
-        else:
-            raise ValueError("Страна или сервис не найден")
-
-
-service = DropSmsService()
-
-
-async def main():
-    balance = await service.get_balance()
-    print("Баланс:", balance)
-
-    async def handler(response):
-        print("Ответ от сервера:", response)
-
-    country_id = 'Russia'
-    service_id = 'Google'
-    await service.rent_number(country_id, service_id, handler)
-
-
-asyncio.run(main())

@@ -6,7 +6,7 @@ import json
 import datetime as dt
 
 
-class SmsManServces(BaseService):
+class SmsManServices(BaseService):
     '''SMS Man service implementation'''
 
     MAX_CACHING_TIME = 12  # in hours
