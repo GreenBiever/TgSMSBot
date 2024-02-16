@@ -29,3 +29,7 @@ class BaseService(ABC):
         '''rent a number from service. May be raise ServerUnavailable exception
     :param handler: async function. Call when
     sms is received with (msg[msg code as str], *args, **kwargs)'''
+
+    @abstractmethod
+    async def get_price(self, country_id: str, service_id: str) -> float:
+        '''get price for current country and service'''
