@@ -10,7 +10,8 @@ from datetime import datetime
 class AuthorizeMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: Message, data) -> bool:
         async with async_session() as session:
-            query = select(User).where(User.tg_id == event.from_user.id)
+            uid = event.from_user.id if hasattr(event, 'from_user') else event.message.from_user.id
+            query = select(User).where(User.tg_id == uid)
             user: User = (await session.execute(query)).scalar()
             if not user:
                 user = User(tg_id=event.from_user.id,

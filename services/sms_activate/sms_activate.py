@@ -18,6 +18,8 @@ class SMSActivateService(BaseService):
 	def __init__(self):
 		self._counties = {}
 		self._services = sms_activate_services.services
+
+	async def connect(self):
 		self.aiohttp_session = aiohttp.ClientSession()
 
 	async def get_balance(self) -> int:
@@ -53,8 +55,8 @@ class SMSActivateService(BaseService):
 	async def get_services(self) -> dict[str, str]:
 		return self._services
 
-	def close(self):
-		return self.session.close()
+	async def close(self):
+		await self.aiohttp_session.close()
 
 	async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str], None], *args, **kwargs) -> str:
 		if not (country_id in (await self.get_countries()).values() and service_id in (await self.get_services()).values()):
@@ -69,3 +71,21 @@ class SMSActivateService(BaseService):
 				raise ServerUnavailable
 		self._handlers[activation_id] = (handler, args, kwargs)
 		return data['phoneNumber']
+	
+	async def get_price(self, country_id: str, service_id: str) -> int:
+		payload = {'api_key': self.api_key, 'service': service_id, 'country': country_id, 'action': 'getPrices'}
+		async with self.aiohttp_session.get(self._api_url, params=payload) as response:
+			response = await response.content.read()
+			try:
+				data = json.loads(response)
+				country = data[country_id]
+				price = country[service_id]['cost'] 
+				count = data[country_id][service_id]['count']					
+			except (json.JSONDecodeError, KeyError):
+			    raise ServerUnavailable
+		if count == 0:
+			raise ServerUnavailable
+		return price
+
+	def __str__(self):
+		return 'SMS Activate'

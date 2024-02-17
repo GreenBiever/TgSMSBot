@@ -10,7 +10,9 @@ class BadAPIKey(BaseException):
 
 
 class BaseService(ABC):
-    '''get interface to interact with services that take SMS'''
+    '''get interface to interact with services that take SMS.
+    If your class needed to execute asynchronous code before (and after) use,
+    you may implement async method 'connect' and async 'close' - they will be called before(and after accordingly) any others methods'''
 
     @abstractmethod
     async def get_balance(self) -> int:
@@ -31,5 +33,6 @@ class BaseService(ABC):
     sms is received with (msg[msg code as str], *args, **kwargs)'''
 
     @abstractmethod
-    async def get_price(self, country_id: str, service_id: str) -> float:
-        '''get price for current country and service'''
+    async def get_price(self, country_id: str, service_id: str) -> int:
+        '''get price for current country and service. If service not have required telephone
+        numbers, method must be raise ServerUnavailable exception.'''
