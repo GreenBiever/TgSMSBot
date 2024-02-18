@@ -1,1 +1,1 @@
-from sms_man import SmsManServces
+from sms_man import SmsManServices

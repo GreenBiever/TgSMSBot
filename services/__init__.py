@@ -2,7 +2,7 @@ from .base import BaseService
 from .sms_activate import SMSActivateService
 import json
 
-FILEPATH = r'C:\Users\Артем\Documents\TgSMSBot\services\services.json'
+FILEPATH = r'C:\Users\vn264\Desktop\sms_bot\services\services.json'
 
 services: list[BaseService] = [SMSActivateService()]  # Ordered by priority
 
