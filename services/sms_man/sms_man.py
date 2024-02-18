@@ -1,3 +1,5 @@
+import asyncio
+
 from services.base import BaseService, ServerUnavailable, BadAPIKey
 from typing import Callable
 from config import config
@@ -19,12 +21,15 @@ class SmsManServices(BaseService):
         self._services = {}
         self.aiohttp_session = aiohttp.ClientSession()
 
-    async def get_balance(self) -> int:
+    async def connect(self):
+        self.aiohttp_session = aiohttp.ClientSession()
+
+    async def get_balance(self) -> float:
         url = f'{self._api_url}get-balance'
         payload = {'token': self.api_key}
-        async with self.aiohttp_session.get(self._api_url, params=payload) as response:
-            data = (await response.content.read()).decode()
-            if 'success' in data and data['success'] == False:
+        async with self.aiohttp_session.get(url, params=payload) as response:
+            data = await response.json()
+            if 'success' in data and data['success'] is False:
                 error_code = data.get('error_code', 'unknown_error')
                 error_msg = data.get('error_msg', 'Unknown error occurred.')
                 if error_code == 'wrong_token':
@@ -46,15 +51,8 @@ class SmsManServices(BaseService):
         payload = {'token': self.api_key}
         async with self.aiohttp_session.get(url, params=payload) as response:
             data = await response.json()
-            if 'success' in data and not data['success']:
-                error_code = data.get('error_code', 'unknown_error')
-                error_msg = data.get('error_msg', 'Unknown error occurred.')
-                if error_code == 'wrong_token':
-                    raise BadAPIKey(error_msg)
-                else:
-                    raise ServerUnavailable("Server response not correct")
             try:
-                countries = {country['title']: str(country['id']) for country in data}
+                countries = {country['title']: (country['id']) for country in data.values()}
                 self._countries = countries
                 return countries
             except (KeyError, TypeError):
@@ -69,40 +67,86 @@ class SmsManServices(BaseService):
         url = f'{self._api_url}applications'
         payload = {'token': self.api_key}
         async with self.aiohttp_session.get(url, params=payload) as response:
-            data = await response.content.read()
+            data = await response.json()
             try:
-                data = json.loads(data)
-                if isinstance(data, list):
-                    services = {service['name']: str(service['id']) for service in data}
-                    self._services = services
-                    return services
-                elif isinstance(data, dict) and 'success' in data and not data['success']:
-                    error_code = data.get('error_code', 'unknown_error')
-                    error_msg = data.get('error_msg', 'Unknown error occurred.')
-                    if error_code == 'wrong_token':
-                        raise BadAPIKey(error_msg)
-                    else:
-                        raise ServerUnavailable("Server response not correct")
-                else:
-                    raise ServerUnavailable("Server response not correct")
-            except (KeyError, TypeError, json.JSONDecodeError):
+                services = {service['title']: (service['id']) for service in data.values()}
+                self._services = services
+                return services
+            except (KeyError, TypeError):
                 raise ServerUnavailable("Server response not correct")
 
     def close(self):
-        return self.session.close()
+        return self.aiohttp_session.close()
+
+
+    async def get_price(self, country_id: str, service_id: str) -> dict:
+        if not country_id in (await self.get_countries()).values():
+            raise ValueError('Unsupported country_id or value_id')
+
+        url = f'{self._api_url}get-prices'
+        payload = {'token': self.api_key, 'country_id': country_id}
+
+        async with self.aiohttp_session.get(url, params=payload) as response:
+            data = await response.text()
+            try:
+                prices = json.loads(data)
+                formatted_prices = {}
+
+                # Находим цену для конкретного сервиса и страны
+                price_info = prices.get(service_id)
+                if price_info:
+                    cost = price_info['cost']
+                    count = price_info['count']
+                    formatted_prices[service_id] = {'cost': cost, 'count': count}
+                else:
+                    raise ValueError(f'Price info for service_id {service_id} not found')
+
+                return cost
+            except json.JSONDecodeError:
+                raise ServerUnavailable("Failed to decode server response")
+
 
     async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str], None], *args, **kwargs):
-        if not (country_id in (await self.get_countries()).values() and service_id in (await self.get_services()).values()):
+        if not (country_id in (await self.get_countries()).values() and service_id in (
+        await self.get_services()).values()):
             raise ValueError('Unsupported country_id or value_id')
         url = f'{self._api_url}get-number'
         payload = {'token': self.api_key, 'country_id': country_id, 'application_id': service_id}
-        async with self.aiohttp_session.get(self._api_url, params=payload) as response:
-            response = await response.content.read()
+        async with self.aiohttp_session.get(url, params=payload) as response:
+            response_text = await response.text()
+            if not response_text:
+                raise ServerUnavailable("Server response is empty")
+
             try:
-                data = json.loads(response)
-                activationId = data['request_id']
-                phone_number = data['number']
+                data = json.loads(response_text)
+                if 'error_code' in data and data['error_code'] == 'balance':
+                    raise ServerUnavailable(data['error_msg'])
+
+                activation_id = data.get('request_id')
+                phone_number = data.get('number')
             except (json.JSONDecodeError, KeyError):
-                raise ServerUnavailable
-        self._handlers[activationId] = (handler, args, kwargs)
+                raise ServerUnavailable("Failed to parse server response")
+
+        self._handlers[activation_id] = (handler, (activation_id,) + args, kwargs)
         return phone_number
+
+
+    async def check_sms_status(self, idActivate: str):
+        while True:
+            await asyncio.sleep(180)
+            url = f'{self._api_url}get-sms'
+            payload = {'token': self.api_key, 'request_id': idActivate}
+            async with self.aiohttp_session.get(self.url, params=payload) as response:
+                response_text = await response.text()
+                if not response_text:
+                    raise ServerUnavailable("Server response is empty")
+                try:
+                    data = json.loads(response_text)
+                    sms_code = data.get('sms_code')
+                except (json.JSONDecodeError, KeyError):
+                    raise ServerUnavailable("Failed to parse server response")
+            return sms_code
+
+
+    def __str__(self):
+        return 'Sms Man'
