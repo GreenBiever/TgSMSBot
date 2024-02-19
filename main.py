@@ -8,7 +8,7 @@ from services.sms_activate.webhook_router import router as sms_activate_webhook_
 from fastapi import FastAPI
 import uvicorn
 from services import services
-
+from database.connect import engine
 
 
 logging.basicConfig(level=logging.INFO,
@@ -33,6 +33,7 @@ async def lifespan(app: FastAPI):
         if hasattr(service, 'close'):
             await service.close()
     await bot.session.close()
+    await engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(sms_activate_webhook_router)

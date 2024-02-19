@@ -9,7 +9,9 @@ async def load():
     '''Load all services and countries'''
     all_services = []
     all_countries = []
-    await services[0].connect()
+    for service in services:
+        if hasattr(service, 'connect'):
+            await service.connect()    
     for service in services:
         data = await service.get_services()
         for service_name in data.keys():
@@ -19,7 +21,6 @@ async def load():
         for country_name in data.keys():
             if country_name not in all_countries:
                 all_countries.append(country_name)
-    #await services[0].close()
     with open(FILEPATH, 'w+', encoding='utf-8') as fp:
         json.dump({'all_services': all_services, 'all_countries': all_countries}, fp)
 

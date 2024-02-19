@@ -114,6 +114,9 @@ async def get_profile(cb: CallbackQuery, user: User):
     await cb.message.answer(f'''{user}\nВаш баланс: {user.balance} руб\nTelegram ID: {user.tg_id}''')
     await cb.answer()
 
+@router.callback_query(F.data == 'pages_count')
+async def print_pages_count(cb: CallbackQuery):
+    await cb.answer("Не кнопка")
 
 #####
 # Login as administrator
