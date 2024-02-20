@@ -1,5 +1,6 @@
 ﻿from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
+from sqlalchemy.util import b
 
 
 
@@ -23,8 +24,10 @@ def get_admin_panel_kb():
 
 def get_main_kb():
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='Арендовать номер', callback_data='buy'))
-    builder.row(InlineKeyboardButton(text='Профиль👤', callback_data='profile'))
+    builder.add(InlineKeyboardButton(text='Арендовать номер', callback_data='buy'),
+                InlineKeyboardButton(text='Профиль👤', callback_data='profile'),
+                InlineKeyboardButton(text='Рефералы👥', callback_data='referral'))
+    builder.adjust(1, 2)
     return builder.as_markup()
 
 def accept_kb():
@@ -56,4 +59,11 @@ def select_kb(cb_startswith: str, data: list[tuple[str, str]], page: int = 0, re
         btns.append(InlineKeyboardButton(text='>', callback_data=f'page_{next_id}_{cb_startswith}'))
         btns.append(InlineKeyboardButton(text='>>>', callback_data=f'page_{pages_count}_{cb_startswith}'))
     builder.row(*btns)
+    return builder.as_markup()
+
+
+def referal_menu_kb():
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text='Мои рефералы', callback_data='my_referals'))
+    builder.row(InlineKeyboardButton(text='🔙Назад', callback_data='back'))
     return builder.as_markup()

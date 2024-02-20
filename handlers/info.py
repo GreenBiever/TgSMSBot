@@ -1,14 +1,18 @@
 ﻿from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
+from aiogram.utils.deep_linking import decode_payload
+from aiogram.utils.deep_linking import create_start_link
 from middlewares import AuthorizeMiddleware
 from config import config
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import User
 from database.methods import change_balance
-from keyboards import get_admin_panel_kb, select_kb, get_main_kb, accept_kb
+from keyboards import get_admin_panel_kb, select_kb, get_main_kb, accept_kb, referal_menu_kb
 from services import services, all_countries, all_services
 from services.base import ServerUnavailable
 import logging
@@ -23,13 +27,15 @@ router.callback_query.middleware(AuthorizeMiddleware())
 
 logger = logging.getLogger(__name__)
 
+START_TEXT = 'Добро пожаловать'
+
 async def sms_handler(text: str, bot: Bot, tg_id: str):
     await bot.send_message(f"На номер было отправлено сообщение: <b>{text}</b>", tg_id)
 
 
 @router.message(Command("start"))
-async def cmd_start(msg: Message):
-    START_TEXT = 'Добро пожаловать'
+async def cmd_start(msg: Message, command: CommandObject, session: AsyncSession, user: User):
+    
     await msg.answer(START_TEXT, reply_markup=get_main_kb())
 
 
@@ -53,7 +59,7 @@ async def select_service(cb: CallbackQuery, state: FSMContext):
         try:
             country_id = (await service.get_countries())[data['country']]
             service_id = (await service.get_services())[data['service']]
-            price = await service.get_price(country_id, service_id)
+            price = (await service.get_price(country_id, service_id)) * float(config['Telegram']['amount'])
             await state.update_data({'price': price, "server": service})
         except (ServerUnavailable, ValueError):
             continue
@@ -97,7 +103,6 @@ async def select_service(cb: CallbackQuery, state: FSMContext, user: User, sessi
         await change_balance(session, user, -price)
         await cb.message.answer(f"Номер успешно арендован. Номер: <b>{telephone_number}</b>")
     finally:
-        await state.set_state()
         await state.clear()
         await cb.answer()
 
@@ -117,6 +122,36 @@ async def get_profile(cb: CallbackQuery, user: User):
 @router.callback_query(F.data == 'pages_count')
 async def print_pages_count(cb: CallbackQuery):
     await cb.answer("Не кнопка")
+
+
+@router.callback_query(F.data == 'referral')
+async def referal_info(cb: CallbackQuery, bot: Bot, user: User):
+    link = await create_start_link(bot, user.id, encode=True)
+    await cb.message.edit_text(f'''👥 Реферальная система
+
+▫️ Ваша реферальная ссылка:
+
+{link}
+
+❗️Если человек, приглашенный по вашей реферальной ссылке, пополнит баланс, \
+то вы получите 5% от суммы его депозита.''', reply_markup=referal_menu_kb())
+
+@router.callback_query(F.data == 'back')
+async def go_to_main_menu(cb: CallbackQuery):
+    await cb.message.edit_text(START_TEXT, reply_markup=get_main_kb())
+
+@router.callback_query(F.data == 'my_referals')
+async def get_my_referals(cb: CallbackQuery, session: AsyncSession, user: User):
+    user = (await session.execute(select(User).where(User.id == user.id)  # The same one user,
+                .options(selectinload(User.referers)))).scalars().first() # but with selectinload to user.referers
+    number_of_referals = len(user.referers)
+    await cb.answer()
+    msg = f'По вашей ссылке зарегистрировалось пользователей: <b>{number_of_referals}</b>'
+    if number_of_referals:
+        msg += "<b>Ваши рефералы:</b>:"
+        for number, referal in zip(range(1,number_of_referals+1), user.referers):
+            msg += f"\n{number}) {referal}"
+    await cb.message.answer(msg)
 
 #####
 # Login as administrator

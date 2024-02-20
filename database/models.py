@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy import Integer, VARCHAR, Column, DateTime, ForeignKey, Boolean, Float, Table
+from sqlalchemy import Integer, VARCHAR, Column, DateTime, ForeignKey, Boolean
 from datetime import datetime
 
 
@@ -18,6 +18,8 @@ class User(Base):
     created_on = Column(DateTime(), default=datetime.now)
     is_blocked = Column(Boolean, default=False)
     balance = Column(Integer, nullable=False, default=0)
+    referal_id = Column(Integer, ForeignKey('users.id'))
+    referal = relationship('User', backref='referers', remote_side=[id])
 
     def __str__(self):
         return f"{self.fname} {self.lname}"
@@ -37,15 +39,3 @@ class Payment(Base):
 
     def __repr__(self):
         return f"payment<{self.id}> to user {self.user}, amount: {self.amount}"
-
-
-class TelephoneNumber(Base):
-    __tablename__ = 'telephone_numbers'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    number = Column(VARCHAR(16), unique=True, nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship('User', backref='telephone_numbers')
-
-    def __str__(self):
-        return self.number

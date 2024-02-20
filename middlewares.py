@@ -1,4 +1,5 @@
 ﻿from aiogram import BaseMiddleware
+from aiogram.utils.deep_linking import decode_payload
 from aiogram.types import Message
 import logging
 from database.models import User
@@ -19,6 +20,10 @@ class AuthorizeMiddleware(BaseMiddleware):
                             lname=event.from_user.last_name,
                             username=event.from_user.username
                             )
+                if 'command' in data and (command := data['command']).args:
+                    payload = decode_payload(command.args)
+                    if (referer := (await session.get(User, payload))):
+                        user.referal = referer
                 logger = logging.getLogger()
                 logger.info(f'New user')
                 session.add(user)

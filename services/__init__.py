@@ -1,8 +1,10 @@
 from .base import BaseService
 from .sms_activate import SMSActivateService
 import json
+from os.path import abspath
 
-FILEPATH = r'C:\Users\vn264\Desktop\sms_bot\services\services.json'
+
+FILEPATH = abspath(r'services/services.json')
 
 services: list[BaseService] = [SMSActivateService()]  # Ordered by priority
 
