@@ -39,3 +39,6 @@ class Payment(Base):
 
     def __repr__(self):
         return f"payment<{self.id}> to user {self.user}, amount: {self.amount}"
+
+
+

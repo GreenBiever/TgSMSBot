@@ -66,3 +66,21 @@ class ViotpService(BaseService):
         self._handlers[activation_id] = (handler, args, kwargs)
         return data['phone_number']
 
+    async def get_countries(self) -> None:
+        return None
+
+
+    async def get_price(self, country_id: str, service_id: str) -> int:
+        url = 'https://api.viotp.com/service/getv2'
+        payload = {'token': self.api_key, 'country': country_id}
+        async with self.aiohttp_session.get(url, params=payload) as response:
+            response_text = await response.text()
+            try:
+                data = json.loads(response_text)
+                for item in data.get('data', []):
+                    if str(item.get('id')) == service_id:
+                        return int(item.get('price', 0))
+                raise ServerUnavailable("Сервис не найден")
+            except json.JSONDecodeError:
+                raise ServerUnavailable
+

@@ -30,7 +30,8 @@ async def get_amount(session: AsyncSession, user_id: int) -> float:
 
 async def get_expenses(session: AsyncSession, user_id: int) -> float:
     query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))
-    return (await session.execute(query)).scalars().first() * -1
+    total_expenses = (await session.execute(query)).scalars().first()
+    return total_expenses * -1 if total_expenses is not None else 0.0
 
 async def get_number_of_activations(session: AsyncSession, user_id: int) -> int:
     query = select(func.count(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))

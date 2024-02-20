@@ -22,7 +22,7 @@ dp.include_routers(info.router, admin.router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    #if (await bot.get_webhook_info()) != WEBHOOK_URL:
+    # if (await bot.get_webhook_info()) != WEBHOOK_URL:
     await bot.set_webhook(url=(config['web_server']['webhook_url'] +
                               config['web_server']['tg_webhook_path'] ), allowed_updates=['*'])
     for service in services:
