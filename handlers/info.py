@@ -1,7 +1,6 @@
 ﻿from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command, CommandObject
-from aiogram.utils.deep_linking import decode_payload
+from aiogram.filters import Command
 from aiogram.utils.deep_linking import create_start_link
 from middlewares import AuthorizeMiddleware
 from config import config
@@ -11,8 +10,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import User
-from database.methods import change_balance
-from keyboards import get_admin_panel_kb, select_kb, get_main_kb, accept_kb, referal_menu_kb
+from database.methods import change_balance, get_amount, get_expenses, get_number_of_activations
+from keyboards import (get_admin_panel_kb, select_kb, get_main_kb,
+                      accept_kb, referal_menu_kb, back_kb, get_info_kb)
 from services import services, all_countries, all_services
 from services.base import ServerUnavailable
 import logging
@@ -34,26 +34,29 @@ async def sms_handler(text: str, bot: Bot, tg_id: str):
 
 
 @router.message(Command("start"))
-async def cmd_start(msg: Message, command: CommandObject, session: AsyncSession, user: User):
-    
+async def cmd_start(msg: Message):
     await msg.answer(START_TEXT, reply_markup=get_main_kb())
 
 
 @router.callback_query(F.data == 'buy')
 async def rent_number(cb: CallbackQuery, state: FSMContext):
-    await cb.message.answer("Выберите страну", reply_markup=select_kb('countries', all_countries))
-    await cb.answer()
-
-@router.callback_query(F.data.startswith("countries"))
-async def select_country(cb: CallbackQuery, state: FSMContext):
-    await state.update_data({'country': cb.data[9:]})
     await cb.message.answer("Выберите сервис", reply_markup=select_kb('services', all_services))
     await cb.answer()
 
 @router.callback_query(F.data.startswith("services"))
-async def select_service(cb: CallbackQuery, state: FSMContext):
+async def select_country(cb: CallbackQuery, state: FSMContext):
     await state.update_data({'service': cb.data[8:]})
+    await cb.message.answer("Выберите страну", reply_markup=select_kb('countries', all_countries))
+    await cb.answer()
+
+@router.callback_query(F.data.startswith("countries"))
+async def select_service(cb: CallbackQuery, state: FSMContext):
+    await state.update_data({'country': cb.data[9:]})
     data = await state.get_data()
+    if 'service' not in data:
+        await cb.message.answer("Прежде чем выбирать страну, выберите сервис, для которого вы заказываете номер")
+        await cb.answer()
+        return
     price = None
     for service in services:
         try:
@@ -61,7 +64,7 @@ async def select_service(cb: CallbackQuery, state: FSMContext):
             service_id = (await service.get_services())[data['service']]
             price = (await service.get_price(country_id, service_id)) * float(config['Telegram']['amount'])
             await state.update_data({'price': price, "server": service})
-        except (ServerUnavailable, ValueError):
+        except (ServerUnavailable, KeyError):
             continue
         else:
             break
@@ -115,14 +118,47 @@ async def get_my_list(cb: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data == 'profile')
-async def get_profile(cb: CallbackQuery, user: User):
-    await cb.message.answer(f'''{user}\nВаш баланс: {user.balance} руб\nTelegram ID: {user.tg_id}''')
-    await cb.answer()
+async def get_profile(cb: CallbackQuery, user: User, session: AsyncSession):
+    total_amount = await get_amount(session, user.id)
+    total_expenses = await get_expenses(session, user.id)
+    number_of_rent = await get_number_of_activations(session, user.id)
+    await cb.message.edit_text(f'''{user}\n
+Ваш ID: {user.tg_id}
+💰 Ваш баланс: {user.balance} руб.
+
+📥 Пополнений на сумму: {total_amount} руб.
+🛒 Активаций на сумму: {total_expenses} руб.
+📲 Всего номеров арендовано: {number_of_rent}''',  reply_markup=back_kb())
 
 @router.callback_query(F.data == 'pages_count')
 async def print_pages_count(cb: CallbackQuery):
     await cb.answer("Не кнопка")
 
+class SearchStates(StatesGroup):
+    wait_text = State()
+
+@router.callback_query(F.data.startswith('search_'))
+async def start_search_number(cb: CallbackQuery, state: FSMContext):
+    section = cb.data.split('_')[1]
+    await state.update_data({'section': section})
+    await cb.message.answer('Введите название: ')
+    await state.set_state(SearchStates.wait_text)
+    await cb.answer()
+
+
+@router.message(F.text, SearchStates.wait_text)
+async def search_number(msg: Message, state: FSMContext):
+    state_data = await state.get_data()
+    data = all_countries if state_data['section'] == 'countries' else all_services
+    result = []
+    for i in data:
+        if msg.text in i[0]:
+            result.append(i)
+    if result:
+        await msg.answer("Найденные варианты:", reply_markup=select_kb(
+            state_data['section'], result))
+    else:
+        await msg.answer("По вашему запросу ничего не найдено")
 
 @router.callback_query(F.data == 'referral')
 async def referal_info(cb: CallbackQuery, bot: Bot, user: User):
@@ -152,6 +188,10 @@ async def get_my_referals(cb: CallbackQuery, session: AsyncSession, user: User):
         for number, referal in zip(range(1,number_of_referals+1), user.referers):
             msg += f"\n{number}) {referal}"
     await cb.message.answer(msg)
+
+@router.callback_query(F.data == 'info')
+async def get_info(cb: CallbackQuery):
+    await cb.message.edit_text("ℹ️<b>Информация</b>", reply_markup=get_info_kb())
 
 #####
 # Login as administrator

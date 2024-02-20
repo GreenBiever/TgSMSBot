@@ -23,3 +23,15 @@ async def get_total_amount(session: AsyncSession, term: int = 1) -> tuple[int, i
                 .where((Payment.created_on > dt.datetime.now() - dt.timedelta(days=term)) & (Payment.amount > 0)))
     
     return [(await session.execute(q)).scalars().first() or 0 for q in (query, query2)]
+
+async def get_amount(session: AsyncSession, user_id: int) -> float:
+    query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount > 0))
+    return (await session.execute(query)).scalars().first()
+
+async def get_expenses(session: AsyncSession, user_id: int) -> float:
+    query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))
+    return (await session.execute(query)).scalars().first() * -1
+
+async def get_number_of_activations(session: AsyncSession, user_id: int) -> int:
+    query = select(func.count(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))
+    return (await session.execute(query)).scalars().first()
