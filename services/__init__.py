@@ -11,7 +11,12 @@ from os.path import abspath
 
 FILEPATH = abspath(r'services/services.json')
 
-services: list[BaseService] = [SMSActivateService(), SmsHubService(), DropSmsService(), SmsManServices(), ViotpService(), FiveSimService()]
+services: list[BaseService] = [SMSActivateService(),
+                              #SmsHubService(),
+                             DropSmsService(), SmsManServices(), 
+                             #ViotpService(),
+                            #FiveSimService()
+                            ]
 
 with open(FILEPATH, 'r', encoding='utf-8') as fp:
     data = json.load(fp)

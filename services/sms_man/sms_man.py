@@ -1,5 +1,5 @@
 import asyncio
-
+import logging
 from services.base import BaseService, ServerUnavailable, BadAPIKey
 from typing import Callable
 from config import config
@@ -7,6 +7,8 @@ import aiohttp
 import json
 import datetime as dt
 
+
+logger = logging.getLogger(__name__)
 
 class SmsManServices(BaseService):
     '''SMS Man service implementation'''
@@ -19,10 +21,41 @@ class SmsManServices(BaseService):
     def __init__(self):
         self._countries = {}
         self._services = {}
-        self.aiohttp_session = aiohttp.ClientSession()
+
+
+    async def _check_sms(self, request_id) -> None:
+        payload = {'token': self.api_key, 'request_id': request_id}
+        async with self.aiohttp_session.get(f'{self._api_url}get-sms', params=payload):
+            response = await response.content.read()
+            try:
+                data = json.loads(response)
+            except json.JSONDecodeError:
+                raise ServerUnavailable("Failed to parse server response")
+            if 'error_code' in data:
+                if data['error_msg'] == "Current request not exists":  # если истек срок действия номера
+                    self._handlers.pop(request_id)  # то наличие смс на этом номере больше не проверяется
+                    logger.info(f"Request {request_id} deleted because server cant find it")
+                elif data['error_msg'] == "Still waiting...":
+                    return
+            else:
+                handler_params = self._handlers[request_id]
+                handler, args, kwargs = handler_params
+                asyncio.create_task(handler(data['sms_code'], *args, **kwargs))
+            
+
+    async def polling(self, gap: int = 30):
+        '''Send request to server every 30 seconds.
+        If response have data about new SMS, calling appropriate handler 
+        from SmsManService._handlers
+        :param gap: interval between requests in seconds'''
+        while True:
+            await asyncio.gather(*[self._check_sms(request_id) for request_id in self._handlers.keys()])
+            await asyncio.sleep(gap)
 
     async def connect(self):
         self.aiohttp_session = aiohttp.ClientSession()
+        self.polling_task = asyncio.create_task(self.polling())
+
 
     async def get_balance(self) -> float:
         url = f'{self._api_url}get-balance'
@@ -75,9 +108,9 @@ class SmsManServices(BaseService):
             except (KeyError, TypeError):
                 raise ServerUnavailable("Server response not correct")
 
-    def close(self):
-        return self.aiohttp_session.close()
-
+    async def close(self):
+        self.polling_task.cancel()
+        await self.aiohttp_session.close()
 
     async def get_price(self, country_id: str, service_id: str) -> dict:
         if not country_id in (await self.get_countries()).values():
@@ -127,7 +160,7 @@ class SmsManServices(BaseService):
             except (json.JSONDecodeError, KeyError):
                 raise ServerUnavailable("Failed to parse server response")
 
-        self._handlers[activation_id] = (handler, (activation_id,) + args, kwargs)
+        self._handlers[activation_id] = (handler, args, kwargs)
         return phone_number
 
 
