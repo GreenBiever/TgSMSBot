@@ -26,11 +26,11 @@ async def get_total_amount(session: AsyncSession, term: int = 1) -> tuple[int, i
 
 async def get_amount(session: AsyncSession, user_id: int) -> float:
     query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount > 0))
-    return (await session.execute(query)).scalars().first()
+    return (await session.execute(query)).scalars().first() or 0
 
 async def get_expenses(session: AsyncSession, user_id: int) -> float:
     query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))
-    return (await session.execute(query)).scalars().first() * -1
+    return ((await session.execute(query)).scalars().first() or 0) * -1
 
 async def get_number_of_activations(session: AsyncSession, user_id: int) -> int:
     query = select(func.count(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))

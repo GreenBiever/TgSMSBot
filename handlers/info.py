@@ -16,9 +16,17 @@ from keyboards import (get_admin_panel_kb, select_kb, get_main_kb,
 from services import services, all_countries, all_services
 from services.base import ServerUnavailable
 import logging
+import pycountry
 
 
-all_countries = [(i,i) for i in all_countries]
+def get_flag(country: str) -> str:
+    country = pycountry.countries.get(name=country)
+    if country is not None:
+        return country.flag
+    return ''
+
+
+all_countries = [(f"{get_flag(i)} {i}",i) for i in all_countries]
 all_services = [(i,i) for i in all_services]
 
 router = Router()
