@@ -26,7 +26,7 @@ async def get_total_amount(session: AsyncSession, term: int = 1) -> tuple[int, i
 
 async def get_amount(session: AsyncSession, user_id: int) -> float:
     query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount > 0))
-    return (await session.execute(query)).scalars().first() or 0
+    return (await session.execute(query)).scalars().first()
 
 async def get_expenses(session: AsyncSession, user_id: int) -> float:
     query = select(func.sum(Payment.amount)).where((Payment.user_id == user_id) & (Payment.amount < 0))

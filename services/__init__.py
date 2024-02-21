@@ -1,12 +1,17 @@
 from .base import BaseService
 from .sms_activate import SMSActivateService
+from .sms_hub import SmsHubService
+from .drop_sms_bot import DropSmsService
+from .sms_man.sms_man import SmsManServices
+from .viotp import ViotpService
+from .five_sim import FiveSimService
 import json
 from os.path import abspath
 
 
 FILEPATH = abspath(r'services/services.json')
 
-services: list[BaseService] = [SMSActivateService()]  # Ordered by priority
+services: list[BaseService] = [SMSActivateService(), SmsHubService(), DropSmsService(), SmsManServices(), ViotpService(), FiveSimService()]
 
 with open(FILEPATH, 'r', encoding='utf-8') as fp:
     data = json.load(fp)
