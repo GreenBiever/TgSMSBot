@@ -5,6 +5,7 @@ from typing import Callable, Optional
 class ServerUnavailable(BaseException):
     pass
 
+
 class BadAPIKey(BaseException):
     pass
 

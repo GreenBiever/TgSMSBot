@@ -4,6 +4,7 @@ from config import config
 import aiohttp
 import json
 import datetime as dt
+import asyncio
 
 
 class ViotpService(BaseService):
@@ -14,7 +15,19 @@ class ViotpService(BaseService):
 
     def __init__(self):
         self._services = {}
+
+    async def polling(self, gap: int = 30):
+        '''Send request to server every 30 seconds.
+        If response have data about new SMS, calling appropriate handler
+        from SmsManService._handlers
+        :param gap: interval between requests in seconds'''
+        while True:
+            await asyncio.gather(*[self._check_sms(request_id) for request_id in self._handlers.keys()])
+            await asyncio.sleep(gap)
+
+    async def connect(self):
         self.aiohttp_session = aiohttp.ClientSession()
+
 
     async def get_balance(self) -> int:
         url = self._api_url + 'users/balance'
@@ -31,6 +44,7 @@ class ViotpService(BaseService):
                 raise BadAPIKey("Wrong API key")
             else:
                 raise ServerUnavailable("Server response not correct")
+
 
     async def get_services(self) -> dict[str, str]:
         if not hasattr(self, 'last_services_update_time'):
@@ -84,3 +98,10 @@ class ViotpService(BaseService):
             except json.JSONDecodeError:
                 raise ServerUnavailable
 
+
+    async def close(self):
+        await self.aiohttp_session.close()
+
+
+    def __str__(self):
+        return "Viotp Service"

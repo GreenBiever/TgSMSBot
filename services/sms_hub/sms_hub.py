@@ -1,5 +1,5 @@
 import asyncio
-
+import logging
 from services.base import BaseService, ServerUnavailable, BadAPIKey
 from typing import Callable
 from config import config
@@ -8,6 +8,8 @@ import json
 import datetime as dt
 from services.sms_hub import sms_hub_services, sms_hub_countries
 
+
+logger = logging.getLogger(__name__)
 
 class SmsHubService(BaseService):
     MAX_CACHING_TIME = 12  # in hours
@@ -18,8 +20,9 @@ class SmsHubService(BaseService):
     def __init__(self):
         self._countries = sms_hub_countries.countries
         self._services = sms_hub_services.services
-        self.aiohttp_session = aiohttp.ClientSession()
 
+    async def connect(self):
+        self.aiohttp_session = aiohttp.ClientSession()
 
     async def get_balance(self) -> float:
         payload = {'api_key': self.api_key, 'action': 'getBalance'}
@@ -42,7 +45,7 @@ class SmsHubService(BaseService):
     async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str], None], *args,
                           **kwargs) -> str:
         if not (country_id in (await self.get_countries()).values() and service_id in (
-        await self.get_services()).values()):
+                await self.get_services()).values()):
             raise ValueError('Unsupported country_id or value_id')
         payload = {'api_key': self.api_key, 'action': 'getNumber', 'service': service_id, 'country': country_id}
         async with self.aiohttp_session.get(self._api_url, params=payload) as response:
@@ -56,7 +59,6 @@ class SmsHubService(BaseService):
         self._handlers[activation_id] = (handler, args, kwargs)
         return phone_number
 
-
     async def get_price(self, country_id: str, service_id: str) -> int:
         payload = {'api_key': self.api_key, 'action': 'getPrices', 'service': service_id, 'country': country_id}
         async with self.aiohttp_session.get(self._api_url, params=payload) as response:
@@ -68,4 +70,10 @@ class SmsHubService(BaseService):
             except json.JSONDecodeError:
                 raise ServerUnavailable
 
+    async def close(self):
+        await self.aiohttp_session.close()
 
+
+
+    def __str__(self):
+        return 'Sms Hub'

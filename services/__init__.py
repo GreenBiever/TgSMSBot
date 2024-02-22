@@ -5,18 +5,16 @@ from .drop_sms_bot import DropSmsService
 from .sms_man.sms_man import SmsManServices
 from .viotp import ViotpService
 from .five_sim import FiveSimService
+from .sms_activation_pro.sms_activation_pro import SmsActivationPro
 import json
 from os.path import abspath
 
 
 FILEPATH = abspath(r'services/services.json')
 
-services: list[BaseService] = [SMSActivateService(),
-                              #SmsHubService(),
-                             DropSmsService(), SmsManServices(), 
-                             #ViotpService(),
-                            #FiveSimService()
-                            ]
+services: list[BaseService] = [SMSActivateService(), DropSmsService(), SmsManServices(), SmsHubService(), FiveSimService(), ViotpService(), SmsActivationPro()]
+
+
 
 with open(FILEPATH, 'r', encoding='utf-8') as fp:
     data = json.load(fp)

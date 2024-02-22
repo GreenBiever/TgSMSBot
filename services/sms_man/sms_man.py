@@ -25,10 +25,10 @@ class SmsManServices(BaseService):
 
     async def _check_sms(self, request_id) -> None:
         payload = {'token': self.api_key, 'request_id': request_id}
-        async with self.aiohttp_session.get(f'{self._api_url}get-sms', params=payload):
-            response = await response.content.read()
+        async with self.aiohttp_session.get(f'{self._api_url}get-sms', params=payload) as response:
+            response_text = await response.content.read()
             try:
-                data = json.loads(response)
+                data = json.loads(response_text)
             except json.JSONDecodeError:
                 raise ServerUnavailable("Failed to parse server response")
             if 'error_code' in data:
@@ -55,7 +55,6 @@ class SmsManServices(BaseService):
     async def connect(self):
         self.aiohttp_session = aiohttp.ClientSession()
         self.polling_task = asyncio.create_task(self.polling())
-
 
     async def get_balance(self) -> float:
         url = f'{self._api_url}get-balance'
@@ -162,24 +161,6 @@ class SmsManServices(BaseService):
 
         self._handlers[activation_id] = (handler, args, kwargs)
         return phone_number
-
-
-    async def check_sms_status(self, idActivate: str):
-        while True:
-            await asyncio.sleep(180)
-            url = f'{self._api_url}get-sms'
-            payload = {'token': self.api_key, 'request_id': idActivate}
-            async with self.aiohttp_session.get(self.url, params=payload) as response:
-                response_text = await response.text()
-                if not response_text:
-                    raise ServerUnavailable("Server response is empty")
-                try:
-                    data = json.loads(response_text)
-                    sms_code = data.get('sms_code')
-                except (json.JSONDecodeError, KeyError):
-                    raise ServerUnavailable("Failed to parse server response")
-            return sms_code
-
 
     def __str__(self):
         return 'Sms Man'

@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 from services.base import BaseService, ServerUnavailable, BadAPIKey
 from typing import Callable
 from config import config
@@ -7,6 +9,8 @@ import json
 import datetime as dt
 from services.drop_sms_bot import drop_sms_services, drop_sms_countries
 
+
+logger = logging.getLogger(__name__)
 
 class DropSmsService(BaseService):
 
@@ -20,8 +24,36 @@ class DropSmsService(BaseService):
         self._services = drop_sms_services.services
         self.aiohttp_session = aiohttp.ClientSession()
 
+    async def _check_sms(self, request_id) -> None:
+        payload = {'action': 'getStatus', 'api_key': self.api_key, 'id': request_id}
+        async with self.aiohttp_session.get(url=self._api_url, params=payload) as response:
+            response_text = await response.text()
+            if not response_text:
+                raise ServerUnavailable("Empty response from server")
+            try:
+                data = json.loads(response_text)
+                print(data)
+            except json.JSONDecodeError:
+                raise ServerUnavailable("Failed to parse server response")
+            if 'error_code' in data:
+                if data['error_msg'] == "Current request not exists":  # если истек срок действия номера
+                    self._handlers.pop(request_id)  # то наличие смс на этом номере больше не проверяется
+                    logger.info(f"Request {request_id} deleted because server cant find it")
+                elif data['error_msg'] == "Still waiting...":
+                    return
+
+    async def polling(self, gap: int = 30):
+        '''Send request to server every 30 seconds.
+        If response have data about new SMS, calling appropriate handler
+        from DropSms._handlers
+        :param gap: interval between requests in seconds'''
+        while True:
+            await asyncio.gather(*[self._check_sms(request_id) for request_id in self._handlers.keys()])
+            await asyncio.sleep(gap)
+
     async def connect(self):
         self.aiohttp_session = aiohttp.ClientSession()
+        self.polling_task = asyncio.create_task(self.polling())
 
     async def get_balance(self) -> int:
         payload = {'action': 'getBalance', 'api_key': self.api_key}
@@ -42,8 +74,9 @@ class DropSmsService(BaseService):
     async def get_services(self) -> dict[str, str]:
         return self._services
 
-    def close(self):
-        return self.aiohttp_session.close()
+    async def close(self):
+        self.polling_task.cancel()
+        await self.aiohttp_session.close()
 
     async def get_price(self, country_id: str, service_id: str) -> int:
         pass
@@ -65,16 +98,9 @@ class DropSmsService(BaseService):
                 activation_id = data['activationId']
             except (json.JSONDecodeError, KeyError):
                 raise ServerUnavailable
-        self._handlers[activation_id] = (handler, (activation_id,) + args, kwargs)
+        self._handlers[activation_id] = (handler, args, kwargs)
         return data['phoneNumber']
-
-
-    async def check_sms_status(self, idActivate: str):
-        while True:
-            await asyncio.sleep(180)
-            payload = {'action': 'getStatus', 'api_key': self.api_key, 'id': idActivate}
-            async with self.aiohttp_session.get(self._api_url, params=payload) as response:
-                response_text = await response.text()
 
     def __str__(self):
         return 'Drop SMS'
+
