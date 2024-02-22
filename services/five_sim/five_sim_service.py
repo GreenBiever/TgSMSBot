@@ -74,7 +74,6 @@ class FiveSimService(BaseService):
             response_text = await response.text()
             if not response_text:
                 raise ServerUnavailable("Empty response from server")
-
             if response_text == 'STATUS_WAIT_CODE':
                 return
             if response_text == 'STATUS_CANCELED':
@@ -82,6 +81,11 @@ class FiveSimService(BaseService):
                 logger.info(f"Request {request_id} deleted because server cant find it")
 
             elif response_text.startswith('STATUS_OK'):
+                sms_code = response_text.split(':')[1]
+                handler_params = self._handlers[request_id]
+                handler, args, kwargs = handler_params
+                asyncio.create_task(handler(sms_code, *args, **kwargs))
+            elif response_text.startswith('STATUS_WAIT_RETRY'):
                 sms_code = response_text.split(':')[1]
                 handler_params = self._handlers[request_id]
                 handler, args, kwargs = handler_params

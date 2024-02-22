@@ -12,7 +12,7 @@ from os.path import abspath
 
 FILEPATH = abspath(r'services/services.json')
 
-services: list[BaseService] = [SMSActivateService(), DropSmsService(), SmsManServices(), SmsHubService(), FiveSimService(), ViotpService(), SmsActivationPro()]
+services: list[BaseService] = [SMSActivateService(), SmsHubService(), DropSmsService(), SmsManServices(), ViotpService(), FiveSimService()]
 
 
 

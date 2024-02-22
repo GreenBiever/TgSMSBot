@@ -22,7 +22,37 @@ class SmsActivationPro(BaseService):
         self._countries = sms_activation_countries.countries
         self._services = sms_activation_services.services
 
+    async def _check_sms(self, request_id) -> None:
+        payload = {'api_key': self.api_key, 'action': 'getStatus', 'id': request_id}
+        async with self.aiohttp_session.get(self._api_url, params=payload) as response:
+            response_text = await response.text()
+            if not response_text:
+                raise ServerUnavailable("Empty response from server")
+
+            if response_text == 'STATUS_WAIT_CODE':
+                return
+            if response_text == 'STATUS_CANCELED':
+                self._handlers.pop(request_id)
+                logger.info(f"Request {request_id} deleted because server cant find it")
+
+            elif response_text.startswith('STATUS_OK'):
+                sms_code = response_text.split(':')[1]
+                handler_params = self._handlers[request_id]
+                handler, args, kwargs = handler_params
+                asyncio.create_task(handler(sms_code, *args, **kwargs))
+
+    async def polling(self, gap: int = 30):
+        '''Send request to server every 30 seconds.
+        If response have data about new SMS, calling appropriate handler
+        from FiveSimService._handlers
+        :param gap: interval between requests in seconds'''
+        while True:
+            await asyncio.gather(*[self._check_sms(request_id) for request_id in self._handlers.keys()])
+            await asyncio.sleep(gap)
+
+
     async def connect(self):
+        self.polling_task = asyncio.create_task(self.polling())
         connector = aiohttp.TCPConnector(ssl=False)
         self.aiohttp_session = aiohttp.ClientSession(connector=connector)
 
@@ -46,6 +76,7 @@ class SmsActivationPro(BaseService):
         return self._services
 
     async def close(self):
+        self.polling_task.cancel()
         await self.aiohttp_session.close()
 
     async def get_price(self, country_id: str, service_id: str) -> dict:

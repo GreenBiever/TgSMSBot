@@ -1,3 +1,4 @@
+import logging
 from services.base import BaseService, ServerUnavailable, BadAPIKey
 from typing import Callable
 from config import config
@@ -7,6 +8,8 @@ import datetime as dt
 import asyncio
 
 
+logger = logging.getLogger(__name__)
+
 class ViotpService(BaseService):
     MAX_CACHING_TIME = 12  # in hours
     api_key = config['api_keys']['viotp']
@@ -15,6 +18,28 @@ class ViotpService(BaseService):
 
     def __init__(self):
         self._services = {}
+
+    async def _check_sms(self, request_id) -> None:
+        url = self._api_url + 'session/get'
+        payload = {'requestId': request_id, 'token': self.api_key}
+        async with self.aiohttp_session.get(url=url, params=payload) as response:
+            response_json = await response.json()
+            if 'data' in response_json and 'Code' in response_json['data']:
+                sms_code = response_json['data']['Code']
+                handler_params = self._handlers.get(request_id)
+                handler, args, kwargs = handler_params
+                asyncio.create_task(handler(sms_code, *args, **kwargs))
+            elif 'error_code' in response_json:
+                error_msg = response_json.get('error_msg', '')
+                if error_msg == "Current request not exists":
+                    self._handlers.pop(request_id, None)
+                    logger.info(f"Request {request_id} deleted because server can't find it")
+                elif error_msg == "Still waiting...":
+                    return
+                else:
+                    raise ServerUnavailable("Error received from server: " + error_msg)
+            else:
+                raise ServerUnavailable("Failed to parse server response or no SMS code found")
 
     async def polling(self, gap: int = 30):
         '''Send request to server every 30 seconds.
@@ -27,6 +52,7 @@ class ViotpService(BaseService):
 
     async def connect(self):
         self.aiohttp_session = aiohttp.ClientSession()
+        self.polling_task = asyncio.create_task(self.polling())
 
 
     async def get_balance(self) -> int:
@@ -98,10 +124,9 @@ class ViotpService(BaseService):
             except json.JSONDecodeError:
                 raise ServerUnavailable
 
-
     async def close(self):
+        self.polling_task.cancel()
         await self.aiohttp_session.close()
-
 
     def __str__(self):
         return "Viotp Service"
