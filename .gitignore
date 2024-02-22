@@ -4,3 +4,4 @@ venv/
 config.ini
 dbdiagram.txt
 *config.json
+**/.pytest_cache
