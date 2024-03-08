@@ -79,7 +79,15 @@ class DropSmsService(BaseService):
         await self.aiohttp_session.close()
 
     async def get_price(self, country_id: str, service_id: str) -> int:
-        pass
+        if service_id == 'vk':
+            return 6
+        elif service_id == 'fb' or service_id == 'go' or service_id == 'ig':
+            return 1
+        elif service_id == 'wa':
+            return 13
+        else:
+            raise ValueError('Unsupported country_id or value_id')
+
 
     async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str, str], None], *args,
                           **kwargs) -> str:

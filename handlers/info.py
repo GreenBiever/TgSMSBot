@@ -12,11 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import User
 from database.methods import change_balance, get_amount, get_expenses, get_number_of_activations
 from keyboards import (get_admin_panel_kb, select_kb, get_main_kb,
-                      accept_kb, referal_menu_kb, back_kb, get_info_kb)
+                       accept_kb, referal_menu_kb, back_kb, get_info_kb, get_payment_methods_kb,
+                       get_crypto_bot_currencies_kb, check_crypto_bot_kb)
 from services import services, all_countries, all_services
 from services.base import ServerUnavailable
 import logging
 import pycountry
+from aiocryptopay import AioCryptoPay
 
 
 def get_flag(country: str) -> str:
@@ -26,8 +28,8 @@ def get_flag(country: str) -> str:
     return ''
 
 
-all_countries = [(f"{get_flag(i)} {i}",i) for i in all_countries]
-all_services = [(i,i) for i in all_services]
+all_countries = [(f"{get_flag(i)} {i}", i) for i in all_countries]
+all_services = [(i, i) for i in all_services]
 
 router = Router()
 router.message.middleware(AuthorizeMiddleware())
@@ -36,6 +38,7 @@ router.callback_query.middleware(AuthorizeMiddleware())
 logger = logging.getLogger(__name__)
 
 START_TEXT = 'Добро пожаловать'
+
 
 async def sms_handler(text: str, bot: Bot, tg_id: str):
     await bot.send_message(f"На номер было отправлено сообщение: <b>{text}</b>", tg_id)
@@ -51,11 +54,13 @@ async def rent_number(cb: CallbackQuery, state: FSMContext):
     await cb.message.answer("Выберите сервис", reply_markup=select_kb('services', all_services))
     await cb.answer()
 
+
 @router.callback_query(F.data.startswith("services"))
 async def select_country(cb: CallbackQuery, state: FSMContext):
     await state.update_data({'service': cb.data[8:]})
     await cb.message.answer("Выберите страну", reply_markup=select_kb('countries', all_countries))
     await cb.answer()
+
 
 @router.callback_query(F.data.startswith("countries"))
 async def select_service(cb: CallbackQuery, state: FSMContext):
@@ -117,6 +122,7 @@ async def select_service(cb: CallbackQuery, state: FSMContext, user: User, sessi
         await state.clear()
         await cb.answer()
 
+
 @router.callback_query(F.data.startswith('page_'))
 async def get_my_list(cb: CallbackQuery, state: FSMContext):
     _, page_id, request_id = cb.data.split('_')
@@ -136,14 +142,17 @@ async def get_profile(cb: CallbackQuery, user: User, session: AsyncSession):
 
 📥 Пополнений на сумму: {total_amount} руб.
 🛒 Активаций на сумму: {total_expenses} руб.
-📲 Всего номеров арендовано: {number_of_rent}''',  reply_markup=back_kb())
+📲 Всего номеров арендовано: {number_of_rent}''', reply_markup=back_kb())
+
 
 @router.callback_query(F.data == 'pages_count')
 async def print_pages_count(cb: CallbackQuery):
     await cb.answer("Не кнопка")
 
+
 class SearchStates(StatesGroup):
     wait_text = State()
+
 
 @router.callback_query(F.data.startswith('search_'))
 async def start_search_number(cb: CallbackQuery, state: FSMContext):
@@ -168,6 +177,7 @@ async def search_number(msg: Message, state: FSMContext):
     else:
         await msg.answer("По вашему запросу ничего не найдено")
 
+
 @router.callback_query(F.data == 'referral')
 async def referal_info(cb: CallbackQuery, bot: Bot, user: User):
     link = await create_start_link(bot, user.id, encode=True)
@@ -180,26 +190,121 @@ async def referal_info(cb: CallbackQuery, bot: Bot, user: User):
 ❗️Если человек, приглашенный по вашей реферальной ссылке, пополнит баланс, \
 то вы получите 5% от суммы его депозита.''', reply_markup=referal_menu_kb())
 
+
 @router.callback_query(F.data == 'back')
 async def go_to_main_menu(cb: CallbackQuery):
     await cb.message.edit_text(START_TEXT, reply_markup=get_main_kb())
 
+
 @router.callback_query(F.data == 'my_referals')
 async def get_my_referals(cb: CallbackQuery, session: AsyncSession, user: User):
     user = (await session.execute(select(User).where(User.id == user.id)  # The same one user,
-                .options(selectinload(User.referers)))).scalars().first() # but with selectinload to user.referers
+                                  .options(
+        selectinload(User.referers)))).scalars().first()  # but with selectinload to user.referers
     number_of_referals = len(user.referers)
     await cb.answer()
     msg = f'По вашей ссылке зарегистрировалось пользователей: <b>{number_of_referals}</b>'
     if number_of_referals:
         msg += "<b>Ваши рефералы:</b>:"
-        for number, referal in zip(range(1,number_of_referals+1), user.referers):
+        for number, referal in zip(range(1, number_of_referals + 1), user.referers):
             msg += f"\n{number}) {referal}"
     await cb.message.answer(msg)
+
 
 @router.callback_query(F.data == 'info')
 async def get_info(cb: CallbackQuery):
     await cb.message.edit_text("ℹ️<b>Информация</b>", reply_markup=get_info_kb())
+
+
+class TopUpBalance(StatesGroup):
+    amount = State()
+    invoice_id = State()
+
+
+@router.callback_query(F.data == 'top_up_balance')
+async def get_top_up_methods(cb: CallbackQuery, session: AsyncSession, user: User):
+    await cb.message.edit_text("Выберите способ пополнения баланса", reply_markup=get_payment_methods_kb())
+
+
+@router.callback_query(F.data == "payment_cryptobot")
+async def crypto_bot_step1(cb: CallbackQuery, state: FSMContext):
+    crypto_bot_link = "https://t.me/CryptoBot"
+    message_text = (
+        f'<b><a href="{crypto_bot_link}">⚜️ CryptoBot</a></b>\n\n'
+        '— Минимум: <b>0.1 $</b>\n\n'
+        '<b>💸 Введите сумму пополнения в долларах</b>'
+    )
+    await cb.message.edit_text(message_text, disable_web_page_preview=True)
+    await state.set_state(TopUpBalance.amount)
+    await cb.answer()
+
+
+@router.message(F.text, TopUpBalance.amount)
+async def crypto_bot_step2(msg: Message, state: TopUpBalance.amount):
+    state_data = await state.get_data()
+    amount = msg
+    try:
+        if float(amount.text) >= 0.1:
+            crypto_bot_link = "https://t.me/CryptoBot"
+            message_text = (
+                f'<b><a href="{crypto_bot_link}">⚜️ CryptoBot</a></b>\n\n'
+                f'— Сумма: <b>{amount.text} $</b>\n\n'
+                '<b>💸 Выберите валюту, которой хотите оплатить счёт</b>'
+            )
+            await msg.answer(text=message_text, parse_mode='HTML', disable_web_page_preview=True,
+                             reply_markup=get_crypto_bot_currencies_kb())
+            await state.update_data(amount=float(msg.text))
+        else:
+            await msg.answer(
+                '<b>⚠️ Минимум: 0.1 $!<b>'
+            )
+    except ValueError:
+        await msg.answer(
+            '<b>❗️Сумма для пополнения должна быть в числовом формате!</b>'
+        )
+
+
+@router.callback_query(F.data.startswith('crypto_bot_currency|'))
+async def crypto_bot_step3(cb: CallbackQuery, state: TopUpBalance.amount):
+    try:
+        cryptopay = AioCryptoPay(config['payment_api_keys']['CRYPTO_BOT'])
+        print(cryptopay)
+        asset = cb.data.split('|')[1].upper()
+        payment_data = await state.get_data()
+        amount = payment_data.get('amount')
+        invoice = await cryptopay.create_invoice(
+            asset=asset,
+            amount=amount
+        )
+        await cryptopay.close()
+        invoice_id_state = invoice.invoice_id
+        await state.update_data(invoice_id=invoice_id_state)
+        await cb.message.edit_text(f'<b>💸 Отправьте {amount} $ <a href="{invoice.bot_invoice_url}">по ссылке</a></b>',
+                                   reply_markup=check_crypto_bot_kb(invoice.bot_invoice_url, invoice.invoice_id))
+    except Exception as e:
+        await cb.message.edit_text(
+            f'<b>⚠️ Произошла ошибка! {e}</b>'
+        )
+
+
+@router.callback_query(F.data.startswith("check_crypto_bot"))
+async def crypto_bot_step4(cb: CallbackQuery, state: TopUpBalance.amount, session: AsyncSession, user: User):
+    payment_data = await state.get_data()
+    invoice_id = payment_data.get("invoice_id")
+    amount = payment_data.get("amount")
+    amount_db = int(amount) * 90
+    cryptopay = AioCryptoPay(config['payment_api_keys']['CRYPTO_BOT'])
+    invoice = await cryptopay.get_invoices(invoice_ids=invoice_id)
+    await cryptopay.close()
+    if invoice and invoice.status == 'paid':
+        await cb.answer('✅ Оплата прошла успешно!',
+                        show_alert=True)
+        await change_balance(session, user, amount_db)
+        await cb.message.answer(f'<b>💸 Ваш баланс пополнен на сумму {amount} $!</b>', parse_mode='HTML')
+    else:
+        await cb.answer('❗️ Вы не оплатили счёт!',
+                        show_alert=True)
+
 
 #####
 # Login as administrator
