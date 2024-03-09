@@ -78,13 +78,13 @@ class DropSmsService(BaseService):
         self.polling_task.cancel()
         await self.aiohttp_session.close()
 
-    async def get_price(self, country_id: str, service_id: str) -> int:
+    async def get_price(self, country_id: str, service_id: str) -> float:
         if service_id == 'vk':
-            return 6
+            return 0.06
         elif service_id == 'fb' or service_id == 'go' or service_id == 'ig':
-            return 1
+            return 0.01
         elif service_id == 'wa':
-            return 13
+            return 0.14
         else:
             raise ValueError('Unsupported country_id or value_id')
 

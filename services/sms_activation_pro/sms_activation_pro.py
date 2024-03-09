@@ -79,11 +79,8 @@ class SmsActivationPro(BaseService):
         self.polling_task.cancel()
         await self.aiohttp_session.close()
 
-    async def get_price(self, country_id: str, service_id: str) -> dict:
-        cost = None
-        count = None
-        return cost
-
+    async def get_price(self, country_id: str, service_id: str) -> float:
+        return 0.10
     async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str], None], *args,
                           **kwargs) -> str:
         if not (country_id in (await self.get_countries()).values() and service_id in (
