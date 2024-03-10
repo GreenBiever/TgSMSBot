@@ -1,4 +1,6 @@
-﻿from aiogram import Router, F, Bot
+﻿import random
+
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from aiogram.utils.deep_linking import create_start_link
@@ -13,12 +15,13 @@ from database.models import User
 from database.methods import change_balance, get_amount, get_expenses, get_number_of_activations
 from keyboards import (get_admin_panel_kb, select_kb, get_main_kb,
                        accept_kb, referal_menu_kb, back_kb, get_info_kb, get_payment_methods_kb,
-                       get_crypto_bot_currencies_kb, check_crypto_bot_kb)
+                       get_crypto_bot_currencies_kb, check_crypto_bot_kb, check_yoomoney_kb)
 from services import services, all_countries, all_services
 from services.base import ServerUnavailable
 import logging
 import pycountry
 from aiocryptopay import AioCryptoPay
+from yoomoney import Authorize, Client, Quickpay
 
 
 def get_flag(country: str) -> str:
@@ -199,7 +202,7 @@ async def go_to_main_menu(cb: CallbackQuery):
 @router.callback_query(F.data == 'my_referals')
 async def get_my_referals(cb: CallbackQuery, session: AsyncSession, user: User):
     user = (await session.execute(select(User).where(User.id == user.id)  # The same one user,
-                                  .options(
+    .options(
         selectinload(User.referers)))).scalars().first()  # but with selectinload to user.referers
     number_of_referals = len(user.referers)
     await cb.answer()
@@ -304,6 +307,75 @@ async def crypto_bot_step4(cb: CallbackQuery, state: TopUpBalance.amount, sessio
     else:
         await cb.answer('❗️ Вы не оплатили счёт!',
                         show_alert=True)
+
+
+class TopUpYooMoney(StatesGroup):
+    amount = State()
+    label_id = State()
+
+
+@router.callback_query(F.data == "payment_yoomoney")
+async def yoomoney_step1(cb: CallbackQuery, state: FSMContext):
+    message_text = (
+        f'<b>⚜️ Юmoney</b>\n\n'
+        '— Минимум: <b>10 рублей</b>\n\n'
+        '<b>💸 Введите сумму пополнения в рублях</b>'
+    )
+    await cb.message.edit_text(message_text, disable_web_page_preview=True)
+    await state.set_state(TopUpYooMoney.amount)
+    await cb.answer()
+
+
+@router.message(F.text, TopUpYooMoney.amount)
+async def yoomoney_step2(ms: Message, state: TopUpYooMoney.label_id):
+    amount = ms.text
+    try:
+        if float(amount) >= 0.1:
+            label = random.randint(0, 1000)
+            print("LABEL1: ", label)
+            quickpay = Quickpay(
+                receiver="",
+                quickpay_form="shop",
+                targets="Sponsor for this project",
+                paymentType="SB",
+                sum=amount,
+                label=label
+            )
+            await state.update_data(amount=amount)
+            await state.update_data(label_id=label)
+            await ms.answer(f'<b>💸 Отправьте {amount} рублей <a href="{quickpay.base_url}">по ссылке</a></b>',
+                            reply_markup=check_yoomoney_kb(quickpay.base_url, label))
+        else:
+            await ms.answer(
+                '<b>⚠️ Минимум: 10 рублей!<b>'
+            )
+    except ValueError:
+        await ms.answer(
+            '<b>❗️Сумма для пополнения должна быть в числовом формате!</b>'
+        )
+
+
+@router.callback_query(F.data.startswith("check_yoomoney"))
+async def yoomoney_step3(cb: CallbackQuery, state: TopUpYooMoney.label_id, session: AsyncSession, user: User):
+    payment_data = await state.get_data()
+    label = payment_data.get('label_id')
+    amount = payment_data.get("amount")
+    client = Client(config["payment_api_keys"]["YOOMONEY"])
+    print("LABEL2: ", label)
+    history = client.operation_history(label=label)
+    status = None
+    for operation in history.operations:
+        print("\tLabel      -->", operation.label)
+        if str(label) in operation.label:
+            await cb.answer('✅ Оплата прошла успешно!',
+                            show_alert=True)
+            await change_balance(session, user, int(amount))
+            await cb.message.edit_text(f'<b>💸 Ваш баланс пополнен на сумму {amount} рублей!</b>', parse_mode='HTML')
+        else:
+            await cb.answer("❌ Оплата еще не прошла! Пожалуйста проверьте снова!")
+
+
+
 
 
 #####

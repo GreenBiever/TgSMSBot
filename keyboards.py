@@ -87,7 +87,7 @@ def get_info_kb():
 def get_payment_methods_kb():
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="Crypto Bot", callback_data="payment_cryptobot"))
-    builder.row(InlineKeyboardButton(text="Ю Money", callback_data="payment_umoney"))
+    builder.row(InlineKeyboardButton(text="Ю Money", callback_data="payment_yoomoney"))
     builder.row(InlineKeyboardButton(text="🔙Назад", callback_data="back"))
     return builder.as_markup()
 
@@ -115,5 +115,12 @@ def get_crypto_bot_currencies_kb():
 def check_crypto_bot_kb(url: str, invoice_hash: int):
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text='🔗 Оплатить', url=url))
-    builder.row(InlineKeyboardButton(text='♻️ Проверить оплату', callback_data=f'check_crypto_bot|{invoice_hash}'))
+    builder.row(InlineKeyboardButton(text='♻️ Проверить оплату', callback_data=f'check_yoomoney|{invoice_hash}'))
+    return builder.as_markup()
+
+
+def check_yoomoney_kb(url: str, label_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text='🔗 Оплатить', url=url))
+    builder.row(InlineKeyboardButton(text='♻️ Проверить оплату', callback_data=f'check_yoomoney|{label_id}'))
     return builder.as_markup()
