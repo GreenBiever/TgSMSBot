@@ -6,7 +6,7 @@ from config import config
 import aiohttp
 import json
 import datetime as dt
-from . import durian_cloud_countries
+from . import durian_cloud_countries, durian_cloud_services
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class DurianCloudService(BaseService):
 
     def __init__(self):
         self._countries = durian_cloud_countries.countries
-        self._services = {}
+        self._services = durian_cloud_services.services
 
 
     async def connect(self):
@@ -55,10 +55,8 @@ class DurianCloudService(BaseService):
         return self._services
 
 
-    async def get_price(self, country_id: str, service_id: str) -> None:
-        '''Request for getting a balance for Durian Cloud Service
-        The API Request is not on the website.'''
-        return None
+    async def get_price(self, country_id: str, service_id: str) -> float:
+        return 0.08
 
 
     async def rent_number(self, country_id: str, service_id: str, handler: Callable[[str], None], *args,
