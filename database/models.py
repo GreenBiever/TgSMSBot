@@ -1,6 +1,7 @@
 from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy import Integer, VARCHAR, Column, DateTime, ForeignKey, Boolean
+from sqlalchemy import Integer, VARCHAR, Column, DateTime, ForeignKey, Boolean, Enum
 from datetime import datetime
+from lang_pkg.translate import CountriesEnum, lang_data
 
 
 Base = declarative_base()
@@ -13,6 +14,7 @@ class User(Base):
     tg_id = Column(VARCHAR(10), unique=True, nullable=False)
     fname = Column(VARCHAR(100))
     lname = Column(VARCHAR(100))
+    language = Column(Enum(CountriesEnum), nullable=False, default=CountriesEnum.russian.value)
     username = Column(VARCHAR(100))
     last_login = Column(DateTime(), default=datetime.now)
     created_on = Column(DateTime(), default=datetime.now)
@@ -26,6 +28,9 @@ class User(Base):
 
     def __repr__(self):
         return f"<{self.id}>: {self.fname} {self.lname}"
+
+    def translate(self, title, *args, **kwargs):
+        return lang_data[title][self.language.value].format(*args, **kwargs)
 
 
 class Payment(Base):

@@ -1,7 +1,6 @@
-﻿from re import I
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+﻿from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, KeyboardButton
-from sqlalchemy.util import b
+from database.models import User
 
 
 def get_admin_panel_kb():
@@ -22,24 +21,24 @@ def get_admin_panel_kb():
     return builder.as_markup()
 
 
-def get_main_kb():
+def get_main_kb(user):
     builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(text='Арендовать номер', callback_data='buy'),
-                InlineKeyboardButton(text='Профиль👤', callback_data='profile'),
-                InlineKeyboardButton(text='Рефералы👥', callback_data='referral'),
-                InlineKeyboardButton(text="💳Пополнить баланс", callback_data='top_up_balance'),
-                InlineKeyboardButton(text='ℹ️Информация', callback_data='info'))
+    builder.add(InlineKeyboardButton(text=user.translate('btn_rent_number'), callback_data='buy'),
+                InlineKeyboardButton(text=user.translate('btn_profile'), callback_data='profile'),
+                InlineKeyboardButton(text=user.translate('btn_referal'), callback_data='referral'),
+                InlineKeyboardButton(text=user.translate("btn_top_up_balance"), callback_data='top_up_balance'),
+                InlineKeyboardButton(text=user.translate('btn_change_lang'), callback_data='change_lang'),
+                InlineKeyboardButton(text=user.translate("btn_info"), callback_data='info'))
     builder.adjust(1, 2)
     return builder.as_markup()
 
-
-def accept_kb():
+def accept_kb(user: User):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='Купить', callback_data='accept'))
+    builder.row(InlineKeyboardButton(text=user.translate("btn_buy"), callback_data='accept'))
     return builder.as_markup()
 
 
-def select_kb(cb_startswith: str, data: list[tuple[str, str]], page: int = 0, result_in_page: int = 8):
+def select_kb(cb_startswith: str, data: list[tuple[str, str]], user: User, page: int = 0, result_in_page: int = 8):
     pages_count = len(data) // result_in_page - (1 if len(data) % result_in_page == 0 else 0)
     if page > pages_count:
         raise ValueError("Very much page id or result in page")
@@ -48,8 +47,8 @@ def select_kb(cb_startswith: str, data: list[tuple[str, str]], page: int = 0, re
     for (key, value) in data_in_page:
         builder.add(InlineKeyboardButton(text=key, callback_data=cb_startswith + value))
     builder.adjust(2)
-    builder.row(InlineKeyboardButton(text='Поиск🔎', callback_data=f'search_{cb_startswith}'))
-    next_id, previous_id = page + 1, page - 1
+    builder.row(InlineKeyboardButton(text=user.translate("search"), callback_data=f'search_{cb_startswith}'))
+    next_id, previous_id = page+1, page-1
     btns = []
     if previous_id >= 0:
         btns.append(InlineKeyboardButton(text='<<<', callback_data=f'page_0_{cb_startswith}'))
@@ -62,16 +61,15 @@ def select_kb(cb_startswith: str, data: list[tuple[str, str]], page: int = 0, re
     return builder.as_markup()
 
 
-def referal_menu_kb():
+def referal_menu_kb(user: User):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='Мои рефералы', callback_data='my_referals'))
-    builder.row(InlineKeyboardButton(text='🔙Назад', callback_data='back'))
+    builder.row(InlineKeyboardButton(text=user.translate("btn_my_referal"), callback_data='my_referals'))
+    builder.row(InlineKeyboardButton(text=user.translate("btn_back"), callback_data='back'))
     return builder.as_markup()
 
-
-def back_kb():
+def back_kb(user: User):
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text='🔙Назад', callback_data='back'))
+    builder.row(InlineKeyboardButton(text=user.translate("btn_back"), callback_data='back'))
     return builder.as_markup()
 
 
@@ -81,6 +79,14 @@ def get_info_kb():
                                      url='https://telegra.ph/Usloviya-i-polozheniya-predostavleniya-uslugi-SMS-Profit-09-13'))
     builder.row(InlineKeyboardButton(text='Стать поставщиком', url='https://t.me/crystal812'))
     builder.row(InlineKeyboardButton(text='🔙Назад', callback_data='back'))
+    return builder.as_markup()
+
+
+def select_lang_kb(user: User, languages: list[str]):
+    builder = InlineKeyboardBuilder()
+    for lang in languages:
+        builder.row(InlineKeyboardButton(text=lang, callback_data=f'set_lang_{lang}'))
+    builder.row(InlineKeyboardButton(text=user.translate('btn_back'), callback_data='back'))
     return builder.as_markup()
 
 
