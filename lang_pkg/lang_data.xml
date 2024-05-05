@@ -1,0 +1,97 @@
+<data><text name="start_text" args=""><lang title="RU">Добро пожаловать</lang><lang title="EN">Welcome</lang><lang title="DE">Willkommen</lang><lang title="AR">مرحبا</lang><lang title="ZH">欢迎</lang><lang title="PL">Zapraszamy</lang></text><text name="profile" args="name tg_id balance total_amount total_expenses number_of_rent"><lang title="RU">{}
+
+Ваш ID: {}
+💰 Ваш баланс: {} руб.
+
+📥 Пополнений на сумму: {} руб.
+🛒 Активаций на сумму: {} руб.
+📲 Всего номеров арендовано: {}</lang><lang title="EN">{}
+
+Your ID: {}
+💰 Your balance: {} RUB
+
+📥 Deposits in the amount of: {} RUB
+🛒 Activations in the amount of: {} RUB
+📲 Total Rooms Rented: {}</lang><lang title="DE">{}
+
+Ihre ID: {}
+💰 Ihr Guthaben: {} RUB
+
+📥 Einzahlungen in Höhe von: {} RUB
+🛒 Aktivierungen in Höhe von: {} RUB
+📲 Gesamtzahl der vermieteten Zimmer: {}</lang><lang title="AR">{}
+
+هويتك: {}
+💰 رصيدك: {} روبل روسي
+
+📥 الودائع بمبلغ: {} روبل روسي
+🛒 عمليات التنشيط بمبلغ: {} روبل روسي
+📲 إجمالي الغرف المستأجرة: {}</lang><lang title="ZH">{}
+
+您的ID： {}
+💰 您的余额： {} RUB
+
+📥 存款金额：{} RUB
+🛒 激活量：{} RUB
+📲 出租房间总数： {}</lang><lang title="PL">{}
+
+Twój identyfikator: {}
+💰 Twoje saldo: {} RUB
+
+📥 Kaucja w wysokości: {} RUB
+🛒 Aktywacje w wysokości: {} RUB
+📲 Łączna liczba wynajętych pokoi: {}</lang></text><text name="referal_menu" args="ref_link"><lang title="RU">👥 Реферальная система
+
+▫️ Ваша реферальная ссылка:
+
+{}
+
+❗️Если человек, приглашенный по вашей реферальной ссылке, пополнит баланс, то вы получите 5% от суммы его депозита.</lang><lang title="EN">👥 Referral system
+
+▫️ Your referral link:
+
+{}
+
+❗️If a person invited through your referral link replenishes the balance, then you will receive 5% of the amount of his deposit.</lang><lang title="DE">👥 Empfehlungssystem
+
+▫️ Ihr Empfehlungslink:
+
+{}
+
+❗️Wenn eine Person, die über Ihren Empfehlungslink eingeladen wurde, das Guthaben auffüllt, erhalten Sie 5% des Betrags ihrer Einzahlung.</lang><lang title="AR">👥 نظام الإحالة
+
+▫️ رابط الإحالة الخاص بك:
+
+{}
+
+❗️إذا قام شخص تمت دعوته من خلال رابط الإحالة الخاص بك بتجديد الرصيد ، فستتلقى 5٪ من مبلغ إيداعه.</lang><lang title="ZH">👥 推荐系统
+
+▫️ 您的推荐链接：
+
+{}
+
+❗️如果通过您的推荐链接邀请的人补充余额，那么您将收到他存款金额的 5%。</lang><lang title="PL">👥 System poleceń
+
+▫️ Twój link polecający:
+
+{}
+
+❗️Jeśli osoba zaproszona za pośrednictwem Twojego linku polecającego uzupełni saldo, otrzymasz 5% kwoty jej depozytu.</lang></text><text name="btn_back" args=""><lang title="RU">🔙Назад</lang><lang title="EN">🔙Back</lang><lang title="DE">🔙Zurück</lang><lang title="AR">🔙عودة</lang><lang title="ZH">🔙返回</lang><lang title="PL">🔙Wstecz</lang></text><text name="btn_rent_number" args=""><lang title="RU">Арендовать номер</lang><lang title="EN">Rent a room</lang><lang title="DE">Zimmer mieten</lang><lang title="AR">استئجار غرفة</lang><lang title="ZH">租房</lang><lang title="PL">Wynajmij pokój</lang></text><text name="btn_profile" args=""><lang title="RU">Профиль</lang><lang title="EN">Profile</lang><lang title="DE">Profil</lang><lang title="AR">بروفايل</lang><lang title="ZH">个人资料</lang><lang title="PL">Informacje</lang></text><text name="btn_referal" args=""><lang title="RU">Рефералы</lang><lang title="EN">Referrals</lang><lang title="DE">Empfehlungen</lang><lang title="AR">الإحالات</lang><lang title="ZH">推荐</lang><lang title="PL">poleceniach</lang></text><text name="btn_info" args=""><lang title="RU">Информация</lang><lang title="EN">Information</lang><lang title="DE">Informationen</lang><lang title="AR">المعلومات</lang><lang title="ZH">信息</lang><lang title="PL">o</lang></text><text name="btn_change_lang" args=""><lang title="RU">Изменить язык</lang><lang title="EN">Change language</lang><lang title="DE">Sprache ändern</lang><lang title="AR">تغيير اللغة</lang><lang title="ZH">更改语言</lang><lang title="PL">Zmień język</lang></text><text name="btn_my_referal" args=""><lang title="RU">Мои рефералы</lang><lang title="EN">My referrals</lang><lang title="DE">Meine Empfehlungen</lang><lang title="AR">الإحالات الخاصة بي</lang><lang title="ZH">我的推荐</lang><lang title="PL">Moje polecenia</lang></text><text name="select_service" args=""><lang title="RU">Выберите сервис</lang><lang title="EN">Choose a service</lang><lang title="DE">Wählen Sie eine Dienstleistung</lang><lang title="AR">اختر خدمة</lang><lang title="ZH">选择服务</lang><lang title="PL">Wybierz usługę</lang></text><text name="select_lang" args=""><lang title="RU">Выберите язык</lang><lang title="EN">Select a language</lang><lang title="DE">Wählen Sie eine Sprache Benutzer</lang><lang title="AR">اختر لغة</lang><lang title="ZH">选择语言</lang><lang title="PL">Wybierz język</lang></text><text name="my_referal" args="number_of_referals your_referals"><lang title="RU">По вашей ссылке зарегистрировалось пользователей: **{}**
+**Ваши рефералы:**: {}</lang><lang title="EN">Users registered using your link: **{}**
+**Your referrals:**: {}</lang><lang title="DE">haben sich über Ihren Link registriert: **{}**
+**Ihre Empfehlungen:**: {}</lang><lang title="AR">المستخدمون المسجلون باستخدام الرابط الخاص بك: **{}**
+** الإحالات الخاصة بك:**: {}</lang><lang title="ZH">使用您的链接注册的用户：**{}**
+**您的推荐人：**： {}</lang><lang title="PL">Użytkownicy zarejestrowani za pomocą Twojego linku: **{}**
+**Twoje polecenia:**: {}</lang></text><text name="not_found" args=""><lang title="RU">По вашему запросу ничего не найдено</lang><lang title="EN">Nothing was found for your search</lang><lang title="DE">Für Ihre Suche wurde nichts gefunden</lang><lang title="AR">لم يتم العثور على شيء لبحثك</lang><lang title="ZH">搜索未找到任何</lang><lang title="PL">Nic nie znaleziono dla Twojego wyszukiwania</lang></text><text name="found_result" args=""><lang title="RU">Найденные варианты:</lang><lang title="EN">Options found:</lang><lang title="DE">Gefundene Optionen:</lang><lang title="AR">تم العثور على خيارات:</lang><lang title="ZH">找到的选项：</lang><lang title="PL">Znalezione opcje:</lang></text><text name="low_balance" args=""><lang title="RU">На вашем счёте недостаточно средств, пополните баланс</lang><lang title="EN">There are not enough funds on your account, top up your balance</lang><lang title="DE">Es ist nicht genug Guthaben auf Ihrem Konto, laden Sie Ihr Guthaben</lang><lang title="AR">لا توجد أموال كافية في حسابك ، قم بزيادة رصيدك</lang><lang title="ZH">您的账户中没有足够的资金，请充值您的余额</lang><lang title="PL">Nie ma wystarczających środków na Twoim koncie, doładuj saldo</lang></text><text name="error" args=""><lang title="RU">Произошла ошибка. Выберите страну и сервис ещё раз</lang><lang title="EN">An error has occurred. Select your country and service again</lang><lang title="DE">auf Ein Fehler ist aufgetreten. Wählen Sie Ihr Land und Ihren Dienst erneut aus</lang><lang title="AR">حدث خطأ. حدد بلدك والخدمة مرة أخرى</lang><lang title="ZH">发生错误。 再次选择您的国家/地区和服务</lang><lang title="PL">Wystąpił błąd. Ponownie wybierz swój kraj i usługę</lang></text><text name="number_not_available" args=""><lang title="RU">Этот номер недоступен</lang><lang title="EN">This number is not available</lang><lang title="DE">Diese Nummer ist nicht verfügbar</lang><lang title="AR">هذا الرقم غير متوفر</lang><lang title="ZH">此号码不可用</lang><lang title="PL">Ten numer jest niedostępny</lang></text><text name="select_country" args=""><lang title="RU">Выберите страну</lang><lang title="EN">Select a country</lang><lang title="DE">Wählen Sie ein Land</lang><lang title="AR">اختر دولة</lang><lang title="ZH">选择国家/地区</lang><lang title="PL">Wybierz kraj</lang></text><text name="select_service_after_country" args=""><lang title="RU">Прежде чем выбирать страну, выберите сервис, для которого вы заказываете номер</lang><lang title="EN">Before choosing a country, select the service for which you are ordering a room</lang><lang title="DE">aus Bevor Sie sich für ein Land entscheiden, wählen Sie die Dienstleistung aus, für die Sie ein Zimmer bestellen</lang><lang title="AR">قبل اختيار بلد ، حدد الخدمة التي تطلب غرفة لها</lang><lang title="ZH">在选择国家/地区之前，请选择您要为其订购房间的服务</lang><lang title="PL">Przed wyborem kraju wybierz usługę, dla której zamawiasz pokój</lang></text><text name="rent_detail" args="country service price"><lang title="RU">Страна: {}
+Сервис: {}
+Стоимость аренды: **{} руб**</lang><lang title="EN">Country: {}
+Service: {}
+Rental price: **{} rubles**The</lang><lang title="DE">Land: {}
+Dienst: {}
+Mietpreis: **{} Rubel**Das</lang><lang title="AR">البلد: {}
+الخدمة: {}
+سعر الإيجار: **{} روبل **</lang><lang title="ZH">国家/地区： {}
+服务：{}
+租金：**{}卢布**</lang><lang title="PL">Kraj: {}
+Usługa: {}
+Cena wynajmu: **{} rubli**Pokój</lang></text><text name="rented" args="telephone_number"><lang title="RU">Номер успешно арендован. Номер: **{}**</lang><lang title="EN">room has been successfully rented. Number: **{}**A</lang><lang title="DE">Zimmer wurde erfolgreich vermietet. Nummer: **{}**Eine</lang><lang title="AR">تم استئجار الغرفة بنجاح. الرقم: **{}**</lang><lang title="ZH">房间已成功出租。 号码：**{}**</lang><lang title="PL">został pomyślnie wynajęty. Numer: **{}**Wiadomość</lang></text><text name="new_sms" args="text"><lang title="RU">На номер было отправлено сообщение: **{}**</lang><lang title="EN">message was sent to the number: **{}**Enter</lang><lang title="DE">Nachricht wurde an die Nummer gesendet: **{}**Geben Sie</lang><lang title="AR">تم إرسال رسالة إلى الرقم: **{}**أدخل</lang><lang title="ZH">已向号码发送消息：**{}**输入</lang><lang title="PL">została wysłana na numer: **{}**Wpisz</lang></text><text name="wait_search_text" args=""><lang title="RU">Введите название: </lang><lang title="EN">a name: </lang><lang title="DE">einen Namen ein: </lang><lang title="AR">اسما: </lang><lang title="ZH">名称：</lang><lang title="PL">nazwę: </lang></text><text name="btn_top_up_balance" args=""><lang title="RU">💳Пополнить баланс</lang><lang title="EN">💳Top up your balance</lang><lang title="DE">💳Laden Sie Ihr Guthaben auf</lang><lang title="AR">💳اشحن رصيدك</lang><lang title="ZH">💳充值余额</lang><lang title="PL">💳Doładuj saldo</lang></text><text name="btn_buy" args=""><lang title="RU">Купить</lang><lang title="EN">Add to Cart</lang><lang title="DE">In den Warenkorb</lang><lang title="AR">إضافة إلى السلة</lang><lang title="ZH">加入购物车</lang><lang title="PL">Dodaj do koszyka</lang></text></data>

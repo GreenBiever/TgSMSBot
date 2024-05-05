@@ -1,7 +1,6 @@
 import pytest
 from services.base import ServerUnavailable
 from services.drop_sms_bot import DropSmsService
-from .app import get_data
 from aiohttp import ClientSession
 import pytest_asyncio
 from fastapi.testclient import TestClient

@@ -1,7 +1,6 @@
 ﻿import pytest
 from services.base import ServerUnavailable
 from services.sms_activate import SMSActivateService
-from .app import get_data
 from aiohttp import ClientSession
 import pytest_asyncio
 from fastapi.testclient import TestClient
